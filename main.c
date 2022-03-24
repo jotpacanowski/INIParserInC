@@ -5,8 +5,31 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "buf_line_reader.h"
+#include "ini_parser.h"
+
 const char* PROG_NAME = "./parse";
 void usage(void);
+
+void dump_ini_data(void){
+	struct IniLinkedList *ptr = global_ini_state;
+	int count = 0;
+	while(ptr != NULL){
+		printf("[\"%s\"] \"%s\" = \"%s\"\n",
+			ptr->section, ptr->variable, ptr->value);
+		count++;
+		ptr = ptr->next;
+	}
+	fprintf(stderr, "Parsed %d variables.\n", count);
+}
+
+static inline int main3(const char* arg_variable_name){
+	return 5; // TODO
+}
+
+static inline int main4(const char* arg_expression){
+	return 5; // TODO
+}
 
 int main(int argc, char** argv){
 	PROG_NAME = argv[0];
@@ -14,9 +37,30 @@ int main(int argc, char** argv){
 		usage();
 		return 1;
 	}
+	// TODO: Complain about arguments before reading the file
 
-	// ...
-	return 1;
+	read_file_line_by_line(argv[1]);
+
+	if(argc == 2){
+		dump_ini_data();
+		return 0;
+	}else if(argc == 3){
+		if(strcmp(argv[2], "expression") == 0){
+			fprintf(stderr, "Expected second argument after \"expression\".");
+			return 1;
+		}
+		return main3(argv[2]);
+	}else if(argc == 4){
+		if(strcmp(argv[2], "expression") != 0){
+			fprintf(stderr, "Expected second argument to be \"expression\".");
+			return 1;
+		}
+		return main4(argv[3]);
+	}else{
+		fprintf(stderr, "???\n");
+		usage();
+		return 1;
+	}
 }
 
 void usage(void){

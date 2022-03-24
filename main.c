@@ -1,6 +1,8 @@
 /* INI parser main.c
  * Copyright (c) 2022 Jędrzej Pacanowski
  */
+#include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -24,10 +26,69 @@ void dump_ini_data(void){
 }
 
 static inline int main3(const char* arg_variable_name){
-	return 5; // TODO
+
+	char *dot = strchr(arg_variable_name, '.');
+	if(dot == NULL){
+		fprintf(stderr, "Invalid INI variable name: \"%s\"\n", arg_variable_name);
+		fprintf(stderr, "Error: expected '.'\n");
+		exit(2);
+	}
+
+	char *buf_varname = malloc(strlen(arg_variable_name));
+	strcpy(buf_varname, arg_variable_name);
+	char *ptr = buf_varname;
+
+	// Parse section name
+	while(*ptr && isspace(*ptr))ptr++;
+	char *name_of_section = ptr;
+
+	while(*ptr && !isspace(*ptr) && *ptr != '.')ptr++;
+	char *end_of_section = ptr;
+
+	*end_of_section = '\0';
+	ptr++;
+
+	// Parse key name
+	while(*ptr && (isspace(*ptr) || *ptr == '.'))ptr++;
+	char *name_of_key = ptr;
+
+	while(*ptr && !isspace(*ptr))ptr++;
+	char *end_of_key = ptr;
+
+	*end_of_key = '\0';
+
+	fprintf(stderr, "Section name is \"%s\" and key is \"%s\"\n", name_of_section, name_of_key);
+
+	/*
+	size_t our_sec_len = strlen(name_of_section);
+	size_t our_key_len = strlen(name_of_key);
+	*/
+	struct IniLinkedList *iter = global_ini_state;
+	bool found = false;
+	for(; iter != NULL; iter = iter->next){
+		// TODO FIXME Comparing substring due to the whitespace
+		if(/*iter->section_len != our_sec_len ||*/ strstr(name_of_section, iter->section) == 0)
+			continue;
+		if(/*iter->variable_len != our_key_len ||*/ strstr(iter->variable, name_of_key) == 0)
+			continue;
+		fprintf(stderr, "Found [%s] \"%s\" = \"%s\"\n",
+			iter->section, iter->variable, iter->value);
+		found = true;
+		printf("%s\n", iter->value);
+		break;
+	}
+
+	free(buf_varname);
+
+	if(!found){
+		fprintf(stderr, "[Grr] Variable not found\n");
+		return 1;
+	}
+	return 0;
 }
 
 static inline int main4(const char* arg_expression){
+	(void)(arg_expression); puts("TODO");
 	return 5; // TODO
 }
 

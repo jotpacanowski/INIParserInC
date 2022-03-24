@@ -13,7 +13,7 @@ static const size_t LN_FGETS_BUFFER_LEN = 98;
 
 extern void usage(void); // Used on error
 
-void line_handler(const char* line, const size_t len, const int lineno){
+static void line_handler(const char* line, const int lineno){
 	const char* ptr = line;
 	while(*ptr != '\0' && (*ptr == ' ' || *ptr == '\t'))
 		ptr++;
@@ -69,7 +69,7 @@ void read_file_line_by_line(const char* fname){
 		LN_FGETS_BUFFER[len-1] = '\0'; // Replace end of line char
 
 		// Process the line
-		line_handler(LN_FGETS_BUFFER, len-1, lineno);
+		line_handler(LN_FGETS_BUFFER, lineno);
 
 		// Clear buffer
 		LN_FGETS_BUFFER[0] = '\0';

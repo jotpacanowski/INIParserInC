@@ -18,6 +18,8 @@ void ini_parse_var_assignment(const char* line);
 
 struct IniLinkedList {
 	struct IniLinkedList *next;
+	// All char* in this structure point to
+	// unique copies of strings (no reference counting)
 	char *section;
 	size_t section_len;
 	char *variable;

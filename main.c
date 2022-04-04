@@ -8,16 +8,63 @@
 #include <stdlib.h>
 
 #include "buf_line_reader.h"
+#include "common.h"
 #include "ini_parser.h"
 
-const char* PROG_NAME = "./parse";
-void usage(void);
+// Parse section.key string with whitespace
+bool parse_section_key_str(const char** sptr, char** out_section, char** out_key)
+{
+	register const char* ptr = *sptr;
+
+	char *dot = strchr(ptr, '.');
+	if(dot == NULL){
+		fprintf(stderr, "Error: expected '.'\n");
+		return false;
+	}
+
+	// Parse section name
+	while(*ptr && isspace(*ptr))ptr++;
+	const char *name_of_section = ptr;
+	while(*ptr && !isspace(*ptr) && *ptr != '.')ptr++;
+	const char *end_of_section = ptr;
+	ptr++;
+
+	// Parse key name
+	while(*ptr && (isspace(*ptr) || *ptr == '.'))ptr++;
+	const char *name_of_key = ptr;
+	while(*ptr && !isspace(*ptr))ptr++;
+	const char *end_of_key = ptr;
+
+	if(!is_valid_identifier(name_of_section, end_of_section+1-1)){
+		fprintf(stderr, "[Err] Invalid section name \n");
+		exit(2);
+	}
+	if(!is_valid_identifier(name_of_key, end_of_key)){
+		fprintf(stderr, "[Err] Invalid key name \n");
+		exit(2);
+	}
+
+	char* const buf_section = calloc(1, 1 + end_of_section - name_of_section);
+	strncpy(buf_section, name_of_section, end_of_section - name_of_section);
+	char* const buf_key = calloc(1, 1 + end_of_key - name_of_key);
+	strncpy(buf_key, name_of_key, end_of_key - name_of_key);
+
+	fprintf(stderr, "Section name is \"%s\" and key is \"%s\"\n", buf_section, buf_key);
+
+	*out_section = buf_section;
+	*out_key = buf_key;
+
+	// Omit ending whitespace
+	while(*ptr && isspace(*ptr)) ptr++;
+	*sptr = ptr;
+	return true;
+}
 
 void dump_ini_data(void){
 	struct IniLinkedList *ptr = global_ini_state;
 	int count = 0;
 	while(ptr != NULL){
-		printf("[\"%s\"] \"%s\" = \"%s\"\n",
+		fprintf(stderr, "[\"%s\"] \"%s\" = \"%s\"\n",
 			ptr->section, ptr->variable, ptr->value);
 		count++;
 		ptr = ptr->next;
@@ -25,51 +72,27 @@ void dump_ini_data(void){
 	fprintf(stderr, "Parsed %d variables.\n", count);
 }
 
-static inline int main3(const char* arg_variable_name){
+static inline int main3(const char* arg_var_name){
+	// fprintf(stderr, "Trying to find variable \"%s\"\n", arg_var_name);
 
-	char *dot = strchr(arg_variable_name, '.');
-	if(dot == NULL){
-		fprintf(stderr, "Invalid INI variable name: \"%s\"\n", arg_variable_name);
-		fprintf(stderr, "Error: expected '.'\n");
+	const char* sec_key_str = arg_var_name;
+	char* buf_section;
+	char* buf_key;
+	bool good = parse_section_key_str(&sec_key_str, &buf_section, &buf_key);
+	if(!good){
+		fprintf(stderr, "Invalid INI variable name: \"%s\"\n", arg_var_name);
 		exit(2);
 	}
 
-	char *buf_varname = malloc(strlen(arg_variable_name));
-	strcpy(buf_varname, arg_variable_name);
-	char *ptr = buf_varname;
+	size_t our_sec_len = strlen(buf_section);
+	size_t our_key_len = strlen(buf_key);
 
-	// Parse section name
-	while(*ptr && isspace(*ptr))ptr++;
-	char *name_of_section = ptr;
-
-	while(*ptr && !isspace(*ptr) && *ptr != '.')ptr++;
-	char *end_of_section = ptr;
-
-	*end_of_section = '\0';
-	ptr++;
-
-	// Parse key name
-	while(*ptr && (isspace(*ptr) || *ptr == '.'))ptr++;
-	char *name_of_key = ptr;
-
-	while(*ptr && !isspace(*ptr))ptr++;
-	char *end_of_key = ptr;
-
-	*end_of_key = '\0';
-
-	fprintf(stderr, "Section name is \"%s\" and key is \"%s\"\n", name_of_section, name_of_key);
-
-	/*
-	size_t our_sec_len = strlen(name_of_section);
-	size_t our_key_len = strlen(name_of_key);
-	*/
 	struct IniLinkedList *iter = global_ini_state;
 	bool found = false;
 	for(; iter != NULL; iter = iter->next){
-		// TODO FIXME Comparing substring due to the whitespace
-		if(/*iter->section_len != our_sec_len ||*/ strstr(name_of_section, iter->section) == 0)
+		if(iter->section_len != our_sec_len || strcmp(iter->section, buf_section) != 0)
 			continue;
-		if(/*iter->variable_len != our_key_len ||*/ strstr(iter->variable, name_of_key) == 0)
+		if(iter->variable_len != our_key_len || strcmp(iter->variable, buf_key) != 0)
 			continue;
 		fprintf(stderr, "Found [%s] \"%s\" = \"%s\"\n",
 			iter->section, iter->variable, iter->value);
@@ -78,18 +101,18 @@ static inline int main3(const char* arg_variable_name){
 		break;
 	}
 
-	free(buf_varname);
+	free(buf_section);
+	free(buf_key);
 
 	if(!found){
-		fprintf(stderr, "[Grr] Variable not found\n");
+		fprintf(stderr, "[Err] Variable not found\n");
 		return 1;
 	}
 	return 0;
 }
 
 static inline int main4(const char* arg_expression){
-	(void)(arg_expression); puts("TODO");
-	return 5; // TODO
+	(void)(arg_expression); puts("TODO"); exit(123);
 }
 
 int main(int argc, char** argv){
@@ -111,6 +134,7 @@ int main(int argc, char** argv){
 			return 1;
 		}
 		return main3(argv[2]);
+
 	}else if(argc == 4){
 		if(strcmp(argv[2], "expression") != 0){
 			fprintf(stderr, "Expected second argument to be \"expression\".");
@@ -122,6 +146,7 @@ int main(int argc, char** argv){
 		usage();
 		return 1;
 	}
+	// return 0;
 }
 
 void usage(void){
@@ -137,7 +162,7 @@ void usage(void){
 
 // Enable ANSI escape sequences in Windows consoles
 // See https://docs.microsoft.com/en-us/windows/console/getconsolemode#parameters
-__attribute__((constructor)) // Does this work in MSVC?
+// __attribute__((constructor))
 void _fix_win32_ansi_escape(void){
 	const int handle_arr[] = {STD_OUTPUT_HANDLE, STD_ERROR_HANDLE};
 	for(int i=0; i < 2; i++){
@@ -147,6 +172,5 @@ void _fix_win32_ansi_escape(void){
 		mode = mode | 4; // ENABLE_VIRTUAL_TERMINAL_PROCESSING
 		SetConsoleMode(_H, mode);
 	}
-	fprintf(stderr, " [win32] Init term\n");
 }
 #endif

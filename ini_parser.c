@@ -5,16 +5,17 @@
 #include <string.h>
 
 #include "ini_parser.h"
+#include "common.h"
 
 struct IniLinkedList *global_ini_state = NULL;
 
 enum INI_LINE ini_line_category(char c){
 	if(isspace(c))
 		return INI_IGNORE;
-	if(c == '[')
-		return INI_SECTION_HEADER;
 	if(c == ';' || c == '#')
 		return INI_COMMENT;
+	if(c == '[')
+		return INI_SECTION_HEADER;
 	if(isalnum(c) || c == '-')
 		return INI_ASSIGNMENT;
 
@@ -22,15 +23,29 @@ enum INI_LINE ini_line_category(char c){
 	return INI_IGNORE;
 }
 
-static char* global_ini_current_section = "";  // Owning pointer
+static char* global_ini_current_section = NULL;  // Owning pointer
 
-static void ini_add_parsed_variable(const char* varname, const char* varvalue){
+static void ini_add_parsed_variable(const char* const varname, const char* const varvalue)
+{
+	if(!is_valid_identifier(varname, varname + strlen(varname))){
+		fprintf(stderr, "[Err] Invalid variable name\n");
+		fprintf(stderr, "      \"%s\"\n", varname);
+		exit(2);
+	}
+	if(!is_valid_identifier(global_ini_current_section,  // TODO can be checked earlier
+		global_ini_current_section + strlen(global_ini_current_section))){
+		fprintf(stderr, "[Err] Invalid section name\n");
+		fprintf(stderr, "      \"%s\"\n", global_ini_current_section);
+		exit(2);
+	}
 	struct IniLinkedList *new_el = malloc(sizeof(struct IniLinkedList));
-	new_el->section = strdup(global_ini_current_section);
 	new_el->section_len = strlen(global_ini_current_section);
-	new_el->variable = strdup(varname);
+	new_el->section = str_without_ws(global_ini_current_section, new_el->section_len);
+	new_el->section_len = strlen(new_el->section); // once again
 	new_el->variable_len = strlen(varname);
-	new_el->value = strdup(varvalue);
+	new_el->variable = str_without_ws(varname, new_el->variable_len);
+	new_el->variable_len = strlen(new_el->variable); // yet again
+	new_el->value = str_without_ws(varvalue, strlen(varvalue));
 	new_el->value_len = strlen(varvalue);
 
 	// Add to the beginning of the list
@@ -64,15 +79,16 @@ void ini_parse_section_header(const char* line){
 	}
 
 	int section_name_len = end - begin - 1;
-	char* section_name = malloc(section_name_len);
-	section_name[0] = '\0';
+	char* const secname = malloc(section_name_len+1);
+	secname[0] = '\0';
+	strncat(secname, begin+1, section_name_len);
+	printf("Parsed section name: [%s]\n", secname);
 
-	// TODO: Omit whitespace
+	// Handle parsed section name
 
-	strncat(section_name, begin+1, section_name_len);
-	fprintf(stderr, "Parsed section name: [%s]\n", section_name);
-
-	global_ini_current_section = section_name;
+	if(global_ini_current_section != NULL) // Fix memory leak
+		free(global_ini_current_section);
+	global_ini_current_section = secname;
 }
 
 void ini_parse_var_assignment(const char* line){
@@ -87,29 +103,24 @@ void ini_parse_var_assignment(const char* line){
 		exit(2);
 	}
 
-	// TODO: Omit whitespace
-
-	char* varname = malloc(len);
+	char* const varname = malloc(len);
 	varname[0] = '\0';
 	strncat(varname, line, eq_sign - line);
-	fprintf(stderr, "Parsed variable name: \"%s\"\n", varname);
+	printf("Parsed variable name: \"%s\"\n", varname);
 
-	char* varvalue = malloc(len);
+	char* const varvalue = malloc(len);
 	varvalue[0] = '\0';
-
 	strncat(varvalue, eq_sign+1, len - (eq_sign-line+1));
-	fprintf(stderr, "Parsed variable value: \"%s\"\n", varvalue);
-
-	// TODO: Verify variable naming
+	printf("Parsed variable value: \"%s\"\n", varvalue);
 
 	ini_add_parsed_variable(varname, varvalue);
 
-	// free(varname);
-	// free(varvalue);
+	free(varname);
+	free(varvalue);
 }
 
-__attribute__((destructor)) // Does this work in MSVC?
-void ini_free_global_state(void){
+// __attribute__((destructor))  // does not work on MSVC ;f
+ void ini_free_global_state(void){
 	fprintf(stderr, "Freeing global state.\n");
 	struct IniLinkedList *ptr, *old;
 	for(ptr = global_ini_state; ptr != NULL; ){

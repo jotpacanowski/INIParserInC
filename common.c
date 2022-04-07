@@ -5,7 +5,8 @@
 
 const char* PROG_NAME = "./parse";
 
-void str_eat_ws(const char **s, size_t *len){
+void str_eat_ws(const char **s, size_t *len)
+{
 	// remove prefix
 	const char *ptr = *s;
 	const char* const end = ptr + *len;
@@ -25,7 +26,8 @@ void str_eat_ws(const char **s, size_t *len){
 	*s = ptr;
 }
 
-char* str_without_ws(const char* s, size_t len){
+char* str_without_ws(const char* s, size_t len)
+{
 	const char* s2 = s;
 	size_t len2 = len;
 	str_eat_ws(&s2, &len2);

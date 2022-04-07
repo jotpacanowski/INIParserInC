@@ -60,7 +60,8 @@ bool parse_section_key_str(const char** sptr, char** out_section, char** out_key
 	return true;
 }
 
-void dump_ini_data(void){
+void dump_ini_data(void)
+{
 	struct IniLinkedList *ptr = global_ini_state;
 	int count = 0;
 	while(ptr != NULL){
@@ -72,7 +73,8 @@ void dump_ini_data(void){
 	fprintf(stderr, "Parsed %d variables.\n", count);
 }
 
-static inline int main3(const char* arg_var_name){
+static inline int main3(const char* arg_var_name)
+{
 	// fprintf(stderr, "Trying to find variable \"%s\"\n", arg_var_name);
 
 	const char* sec_key_str = arg_var_name;
@@ -111,7 +113,8 @@ static inline int main3(const char* arg_var_name){
 	return 0;
 }
 
-static inline int main4(const char* arg_expression){
+static inline int main4(const char* arg_expression)
+{
 	(void)(arg_expression); puts("TODO"); exit(123);
 }
 
@@ -119,7 +122,8 @@ static inline int main4(const char* arg_expression){
 static void _fix_win32_ansi_escape(void);
 #endif
 
-int main(int argc, char** argv){
+int main(int argc, char** argv)
+{
 	PROG_NAME = argv[0];
 	if(argc <= 1 || argc > 4){
 		usage();
@@ -158,7 +162,8 @@ int main(int argc, char** argv){
 	// return 0;
 }
 
-void usage(void){
+void usage(void)
+{
 	fprintf(stderr, "Usage: %s FILE\n", PROG_NAME);
 	fprintf(stderr, "       %s FILE section.key\n", PROG_NAME);
 	fprintf(stderr, "       %s FILE expression EXPR\n", PROG_NAME);
@@ -172,7 +177,8 @@ void usage(void){
 // Enable ANSI escape sequences in Windows consoles
 // See https://docs.microsoft.com/en-us/windows/console/getconsolemode#parameters
 // __attribute__((constructor))
-static void _fix_win32_ansi_escape(void){
+static void _fix_win32_ansi_escape(void)
+{
 	const int handle_arr[] = {STD_OUTPUT_HANDLE, STD_ERROR_HANDLE};
 	for(int i=0; i < 2; i++){
 		const HANDLE _H = GetStdHandle(handle_arr[i]);

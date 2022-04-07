@@ -17,7 +17,8 @@ char* str_without_ws(const char* s, size_t len);
 
 bool is_valid_identifier(const char* sbegin, const char* send);
 
-static inline char* strdup_substring(const char* s, const size_t len){
+static inline char* strdup_substring(const char* s, const size_t len)
+{
 	char* ret = calloc(1, 1+len);
 	ret[0] = '\0';
 	strncat(ret, s, len);

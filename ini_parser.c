@@ -9,7 +9,8 @@
 
 struct IniLinkedList *global_ini_state = NULL;
 
-enum INI_LINE ini_line_category(char c){
+enum INI_LINE ini_line_category(char c)
+{
 	if(isspace(c))
 		return INI_IGNORE;
 	if(c == ';' || c == '#')
@@ -53,7 +54,8 @@ static void ini_add_parsed_variable(const char* const varname, const char* const
 	global_ini_state = new_el;
 }
 
-void ini_parse_section_header(const char* line){
+void ini_parse_section_header(const char* line)
+{
 	int len = strlen(line);
 	if(len < 3){
 		fprintf(stderr, "Error: line is too short\n");
@@ -91,7 +93,8 @@ void ini_parse_section_header(const char* line){
 	global_ini_current_section = secname;
 }
 
-void ini_parse_var_assignment(const char* line){
+void ini_parse_var_assignment(const char* line)
+{
 	int len = strlen(line);
 	if(len < 3){
 		fprintf(stderr, "Error: line is too short\n");
@@ -120,7 +123,8 @@ void ini_parse_var_assignment(const char* line){
 }
 
 // __attribute__((destructor))  // does not work on MSVC ;f
- void ini_free_global_state(void){
+ void ini_free_global_state(void)
+ {
 	fprintf(stderr, "Freeing global state.\n");
 	struct IniLinkedList *ptr, *old;
 	for(ptr = global_ini_state; ptr != NULL; ){

@@ -16,8 +16,8 @@ static size_t linereadbuf_sz = 0;
 
 void usage(void); // Used on error - TODO move?
 
-void line_handler(const char* line, const int lineno){
-
+void line_handler(const char* line, const int lineno)
+{
 	const char* ptr = line;
 	while(*ptr != '\0' && (*ptr == ' ' || *ptr == '\t'))
 		ptr++;
@@ -26,13 +26,14 @@ void line_handler(const char* line, const int lineno){
 	if(*ptr == '\0'){
 		fprintf(stderr, "\n  Empty line\n");
 		return;
-	}else
+	}else{
 		fprintf(stderr, " %s\n", ptr);
+	}
+
 	fprintf(stderr, "  First non-ws char: %c (%2x) at %d:%zd\n",
 		*ptr, *ptr, lineno, ptr-line);
 
 	enum INI_LINE categ = ini_line_category(ptr[0]);
-
 	switch(categ){
 		case INI_SECTION_HEADER: ini_parse_section_header(line); break;
 		case INI_ASSIGNMENT: ini_parse_var_assignment(line); break;
@@ -49,7 +50,8 @@ void line_handler(const char* line, const int lineno){
 
 static ptrdiff_t max_line_size = 1; // TODO Set to the size of static buf.
 
-static void enlarge_linereadbuf(void){
+static void enlarge_linereadbuf(void)
+{
 	if(linereadbuf == LN_FGETS_BUFFER){
 		linereadbuf_sz = 2 * LN_FGETS_BUFFER_LEN;
 		linereadbuf = malloc(linereadbuf_sz);
@@ -60,7 +62,8 @@ static void enlarge_linereadbuf(void){
 	}
 }
 
-void read_file_line_by_line(const char* fname){
+void read_file_line_by_line(const char* fname)
+{
 	FILE* f;
 	if(strcmp(fname, "-") == 0)
 		f = stdin;

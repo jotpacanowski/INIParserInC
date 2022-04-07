@@ -109,9 +109,123 @@ static inline int main3(const char* arg_var_name)
 	return 0;
 }
 
+static const char EXPR_OPS[] = "+-*/";
+
 static inline int main4(const char* arg_expression)
 {
-	(void)(arg_expression); puts("TODO"); exit(123);
+	// Find one of "+-*/"
+	char* oper = NULL;
+	for(int i=0; i < (int)(sizeof(EXPR_OPS) - 1); i++){
+		char* const x = strchr(arg_expression, EXPR_OPS[i]);
+		const char* const x2 = strchr(arg_expression, EXPR_OPS[i]);
+		if(x == NULL)
+			continue;
+
+		if(x != x2){
+			fprintf(stderr, "[Err] Found '%c' used two times\n",
+				EXPR_OPS[i]);
+			return 2;
+		}
+
+		if(oper != NULL){
+			fprintf(stderr, "[Err] Using multiple operators"
+				" is not supported\n");
+			return 2;
+		}
+		oper = x;
+	}
+
+	if(oper == NULL){
+		fprintf(stderr, "[Err] Invalid expression\n");
+		return 2;
+	}
+
+	// const char* const buf_part1 = strdup_substring(
+		// arg_expression, oper - arg_expression);
+	const char* buf_expr = arg_expression; // buf_part1;
+	char* p1_sec;
+	char* p1_key;
+	char o = *oper;
+	*oper = '\0'; // Parse until the operator
+	bool good = parse_section_key_str(&buf_expr, &p1_sec, &p1_key);
+	*oper = o;
+	if(!good){
+		fprintf(stderr, "Invalid INI variable name: \"%s\"\n", buf_expr);
+		exit(2);
+	}
+
+	buf_expr = oper + 1;
+	char* p2_sec;
+	char* p2_key;
+	good = parse_section_key_str(&buf_expr, &p2_sec, &p2_key);
+	if(!good){
+		fprintf(stderr, "Invalid INI variable name: \"%s\"\n", buf_expr);
+		exit(2);
+	}
+
+	fprintf(stderr, "# EXPRESSION:\n");
+	fprintf(stderr, "#     %s.%s\n", p1_sec, p1_key);
+	fprintf(stderr, "# [%c]  \n", *oper);
+	fprintf(stderr, "#     %s.%s\n", p2_sec, p2_key);
+
+	// Find the values in the linked list (TODO move the code somewhere)
+	struct IniLinkedList *iter;
+	struct IniLinkedList *v1 = NULL; // bool found
+	for(iter = global_ini_state; iter != NULL; iter = iter->next){
+		if(strcmp(iter->section, p1_sec) != 0) continue;
+		if(strcmp(iter->variable, p1_key) != 0) continue;
+		v1 = iter;
+		break;
+	}
+
+	struct IniLinkedList *v2 = NULL;
+	for(iter = global_ini_state; iter != NULL; iter = iter->next){
+		if(strcmp(iter->section, p2_sec) != 0) continue;
+		if(strcmp(iter->variable, p2_key) != 0) continue;
+		v2 = iter;
+		break;
+	}
+
+	if(v1 == NULL && v2 == NULL){
+		fprintf(stderr, "Could not find both %s.%s and %s.%s\n",
+			p1_sec, p1_key, p2_sec, p2_key);
+		free(p1_sec);
+		free(p1_key);
+		free(p2_sec);
+		free(p2_key);
+		return 2;
+	}
+	if(v1 == NULL){
+		fprintf(stderr, "Could not find %s.%s\n", p1_sec, p1_key);
+		free(p1_sec);
+		free(p1_key);
+		free(p2_sec);
+		free(p2_key);
+		return 2;
+	}
+	if(v2 == NULL){
+		fprintf(stderr, "Could not find %s.%s\n", p2_sec, p2_key);
+		free(p1_sec);
+		free(p1_key);
+		free(p2_sec);
+		free(p2_key);
+		return 2;
+	}
+
+	// Check type (float, int, string)
+
+	// Do string concatenation
+	if(o == '+'){
+		printf("%s%s\n", v1->value, v2->value);
+	}else{
+		fprintf(stderr, " TODO \n");
+	}
+
+	free(p1_sec);
+	free(p1_key);
+	free(p2_sec);
+	free(p2_key);
+	return 0;
 }
 
 #ifdef __WIN32__

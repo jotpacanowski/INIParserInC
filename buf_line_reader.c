@@ -6,15 +6,18 @@
 
 #include "buf_line_reader.h"
 #include "ini_parser.h"
+#include "common.h"
 
-static char LN_FGETS_BUFFER[99];
-static const size_t LN_FGETS_BUFFER_LEN = 98;
+#ifndef STATIC_BUFFER_SIZE
+	#define STATIC_BUFFER_SIZE 99  // Can be larger to reduce memory allocations
+#endif
+
+static char LN_FGETS_BUFFER[1 + STATIC_BUFFER_SIZE];
+static const size_t LN_FGETS_BUFFER_LEN = STATIC_BUFFER_SIZE;
 
 // Allocate the buffer on the heap if needed
 static char* linereadbuf = NULL;
 static size_t linereadbuf_sz = 0;
-
-void usage(void); // Used on error - TODO move?
 
 void line_handler(const char* line, const int lineno)
 {
@@ -22,21 +25,13 @@ void line_handler(const char* line, const int lineno)
 	while(*ptr != '\0' && (*ptr == ' ' || *ptr == '\t'))
 		ptr++;
 
-	fprintf(stderr, "\x1b[32;1m%2d:\x1b[0m (len=%3zu)", lineno, strlen(ptr));
-	if(*ptr == '\0'){
-		fprintf(stderr, "\n  Empty line\n");
+	if(*ptr == '\0')
 		return;
-	}else{
-		fprintf(stderr, " %s\n", ptr);
-	}
-
-	fprintf(stderr, "  First non-ws char: %c (%2x) at %d:%zd\n",
-		*ptr, *ptr, lineno, ptr-line);
 
 	enum INI_LINE categ = ini_line_category(ptr[0]);
 	switch(categ){
-		case INI_SECTION_HEADER: ini_parse_section_header(line); break;
-		case INI_ASSIGNMENT: ini_parse_var_assignment(line); break;
+		case INI_SECTION_HEADER: ini_parse_section_header(line, lineno); break;
+		case INI_ASSIGNMENT: ini_parse_var_assignment(line, lineno); break;
 		default: break;
 	}
 }
@@ -48,7 +43,7 @@ void line_handler(const char* line, const int lineno)
 // https://manpages.debian.org/bullseye/manpages-dev/setlocale.3.en.html
 // https://elixir.bootlin.com/glibc/latest/source/libio/iogetdelim.c#L40
 
-static ptrdiff_t max_line_size = 1; // TODO Set to the size of static buf.
+static ptrdiff_t max_line_size = STATIC_BUFFER_SIZE;
 
 static void enlarge_linereadbuf(void)
 {
@@ -75,9 +70,12 @@ void read_file_line_by_line(const char* fname)
 		//fprintf(stderr, "Could not open file %s.\n", fname);
 		usage();
 	}
+
 	// TODO - atexit fclose
 
-	if(f != stdin){
+	if(f == stdin){
+		linereadbuf_sz = 2 * LN_FGETS_BUFFER_LEN;
+	}else{
 		int pos = 0;
 		int last_pos = 0;
 		while(!feof(f)){
@@ -94,18 +92,17 @@ void read_file_line_by_line(const char* fname)
 
 		// Allocate the line buffer
 		linereadbuf_sz = 1 + max_line_size;
-	}else{
-		// linereadbuf = LN_FGETS_BUFFER;
-		linereadbuf_sz = 2 * LN_FGETS_BUFFER_LEN;
 	}
 	linereadbuf = calloc(1, linereadbuf_sz);
 
 	int lineno = 0;
-	// while(fgets(LN_FGETS_BUFFER, LN_FGETS_BUFFER_LEN, f) != NULL){
 	char* bufptr = linereadbuf;
 	while(fgets(bufptr, linereadbuf_sz - (bufptr-linereadbuf), f) != NULL){
 		lineno++;
 		size_t len = strlen(linereadbuf);
+		if(len==0)
+			continue;
+
 		if(len > 0 && linereadbuf[len-1] != '\n'){
 			// read another time to the same buffer
 			ptrdiff_t bufoff = bufptr - linereadbuf;
@@ -113,18 +110,16 @@ void read_file_line_by_line(const char* fname)
 			lineno--;
 			bufptr = linereadbuf + bufoff + len;
 			continue;
-		}else if(len==0){
-			continue;
 		}
-		linereadbuf[len-1] = '\0'; // Replace end of line char
 
-		// Process the line
+		linereadbuf[len-1] = '\0'; // Replace end of line char
 		line_handler(linereadbuf, lineno);
 
 		// Clear buffer
 		linereadbuf[0] = '\0';
 		bufptr = linereadbuf;
 	}
+
 	if(!feof(f)){
 		fclose(f);
 		fprintf(stderr, "Error while reading \"%s\"\n", fname);

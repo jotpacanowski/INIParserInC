@@ -41,8 +41,9 @@ static void ini_add_parsed_variable(const char* const varname, const char* const
 	global_ini_state = new_el;
 }
 
-void ini_parse_section_header(const char* line)
+void ini_parse_section_header(const char* line, int lineno)
 {
+	(void)lineno;
 	int len = strlen(line);
 	if(len < 3){
 		fprintf(stderr, "Error: line is too short\n");
@@ -84,8 +85,9 @@ void ini_parse_section_header(const char* line)
 	global_ini_current_section = secname;
 }
 
-void ini_parse_var_assignment(const char* line)
+void ini_parse_var_assignment(const char* line, int lineno)
 {
+	(void)lineno;
 	int len = strlen(line);
 	if(len < 3){
 		fprintf(stderr, "Error: line is too short\n");

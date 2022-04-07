@@ -13,8 +13,8 @@ enum INI_LINE {
 
 enum INI_LINE ini_line_category(char c);
 
-void ini_parse_section_header(const char* line);
-void ini_parse_var_assignment(const char* line);
+void ini_parse_section_header(const char* line, int lineno);
+void ini_parse_var_assignment(const char* line, int lineno);
 
 struct IniLinkedList {
 	struct IniLinkedList *next;

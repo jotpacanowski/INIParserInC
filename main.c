@@ -71,6 +71,24 @@ void dump_ini_data(void)
 	fprintf(stderr, "Parsed %d variables.\n", count);
 }
 
+static struct IniLinkedList* lookup_ini_data(const char* section, const char* key)
+{
+	size_t sec_len = strlen(section);
+	size_t key_len = strlen(key);
+
+	struct IniLinkedList *iter;
+	for(iter = global_ini_state; iter != NULL; iter = iter->next){
+		if(iter->section_len != sec_len || iter->variable_len != key_len)
+			continue;
+		if(strcmp(iter->section, section) != 0)
+			continue;
+		if(strcmp(iter->variable, key) != 0)
+			continue;
+		return iter;
+	}
+	return NULL;
+}
+
 static inline int main3(const char* arg_var_name)
 {
 	const char* sec_key_str = arg_var_name;
@@ -82,30 +100,17 @@ static inline int main3(const char* arg_var_name)
 		exit(2);
 	}
 
-	size_t our_sec_len = strlen(buf_section);
-	size_t our_key_len = strlen(buf_key);
-
-	struct IniLinkedList *iter = global_ini_state;
-	bool found = false;
-	for(; iter != NULL; iter = iter->next){
-		if(iter->section_len != our_sec_len || strcmp(iter->section, buf_section) != 0)
-			continue;
-		if(iter->variable_len != our_key_len || strcmp(iter->variable, buf_key) != 0)
-			continue;
-		fprintf(stderr, "Found %s.%s = \"%s\"\n",
-			iter->section, iter->variable, iter->value);
-		found = true;
-		printf("%s\n", iter->value);
-		break;
-	}
+	struct IniLinkedList* it = lookup_ini_data(buf_section, buf_key);
+	if(it == NULL)
+		fprintf(stderr, "[Err] Variable not found\n");
+	else
+		printf("%s\n", it->value);
 
 	free(buf_section);
 	free(buf_key);
 
-	if(!found){
-		fprintf(stderr, "[Err] Variable not found\n");
+	if(!it)
 		return 1;
-	}
 	return 0;
 }
 
@@ -113,6 +118,8 @@ static const char EXPR_OPS[] = "+-*/";
 
 static inline int main4(const char* arg_expression)
 {
+	int status = 0;
+
 	// Find one of "+-*/"
 	char* oper = NULL;
 	for(int i=0; i < (int)(sizeof(EXPR_OPS) - 1); i++){
@@ -141,8 +148,8 @@ static inline int main4(const char* arg_expression)
 	}
 
 	// const char* const buf_part1 = strdup_substring(
-		// arg_expression, oper - arg_expression);
-	const char* buf_expr = arg_expression; // buf_part1;
+	// arg_expression, oper - arg_expression);
+	const char* buf_expr = arg_expression;
 	char* p1_sec;
 	char* p1_key;
 	char o = *oper;
@@ -168,49 +175,30 @@ static inline int main4(const char* arg_expression)
 	fprintf(stderr, "# [%c]  \n", *oper);
 	fprintf(stderr, "#     %s.%s\n", p2_sec, p2_key);
 
-	// Find the values in the linked list (TODO move the code somewhere)
-	struct IniLinkedList *iter;
-	struct IniLinkedList *v1 = NULL; // bool found
-	for(iter = global_ini_state; iter != NULL; iter = iter->next){
-		if(strcmp(iter->section, p1_sec) != 0) continue;
-		if(strcmp(iter->variable, p1_key) != 0) continue;
-		v1 = iter;
-		break;
-	}
-
-	struct IniLinkedList *v2 = NULL;
-	for(iter = global_ini_state; iter != NULL; iter = iter->next){
-		if(strcmp(iter->section, p2_sec) != 0) continue;
-		if(strcmp(iter->variable, p2_key) != 0) continue;
-		v2 = iter;
-		break;
-	}
+	// Find the values in the linked list
+	struct IniLinkedList *v1 = lookup_ini_data(p1_sec, p1_key);
+	struct IniLinkedList *v2 = lookup_ini_data(p2_sec, p2_key);
 
 	if(v1 == NULL && v2 == NULL){
 		fprintf(stderr, "Could not find both %s.%s and %s.%s\n",
 			p1_sec, p1_key, p2_sec, p2_key);
-		free(p1_sec);
-		free(p1_key);
-		free(p2_sec);
-		free(p2_key);
-		return 2;
+		status = 2;
+		goto main4_error;
 	}
 	if(v1 == NULL){
 		fprintf(stderr, "Could not find %s.%s\n", p1_sec, p1_key);
-		free(p1_sec);
-		free(p1_key);
-		free(p2_sec);
-		free(p2_key);
-		return 2;
+		status = 2;
+		goto main4_error;
 	}
 	if(v2 == NULL){
 		fprintf(stderr, "Could not find %s.%s\n", p2_sec, p2_key);
-		free(p1_sec);
-		free(p1_key);
-		free(p2_sec);
-		free(p2_key);
-		return 2;
+		status = 2;
+		goto main4_error;
 	}
+
+	// We have got the values
+	fprintf(stderr, "# EXPRESSION:\n");
+	fprintf(stderr, "# \"%15s\" [%c] \"%15s\" \n", v1->value, o, v2->value);
 
 	// Check type (float, int, string)
 
@@ -221,11 +209,12 @@ static inline int main4(const char* arg_expression)
 		fprintf(stderr, " TODO \n");
 	}
 
+main4_error:
 	free(p1_sec);
 	free(p1_key);
 	free(p2_sec);
 	free(p2_key);
-	return 0;
+	return status;
 }
 
 #ifdef __WIN32__

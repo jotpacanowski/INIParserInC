@@ -28,25 +28,12 @@ static char* global_ini_current_section = NULL;  // Owning pointer
 
 static void ini_add_parsed_variable(const char* const varname, const char* const varvalue)
 {
-	if(!is_valid_identifier(varname, varname + strlen(varname))){
-		fprintf(stderr, "[Err] Invalid variable name\n");
-		fprintf(stderr, "      \"%s\"\n", varname);
-		exit(2);
-	}
-	if(!is_valid_identifier(global_ini_current_section,  // TODO can be checked earlier
-		global_ini_current_section + strlen(global_ini_current_section))){
-		fprintf(stderr, "[Err] Invalid section name\n");
-		fprintf(stderr, "      \"%s\"\n", global_ini_current_section);
-		exit(2);
-	}
 	struct IniLinkedList *new_el = malloc(sizeof(struct IniLinkedList));
 	new_el->section_len = strlen(global_ini_current_section);
-	new_el->section = str_without_ws(global_ini_current_section, new_el->section_len);
-	new_el->section_len = strlen(new_el->section); // once again
+	new_el->section = strdup(global_ini_current_section);
 	new_el->variable_len = strlen(varname);
-	new_el->variable = str_without_ws(varname, new_el->variable_len);
-	new_el->variable_len = strlen(new_el->variable); // yet again
-	new_el->value = str_without_ws(varvalue, strlen(varvalue));
+	new_el->variable = strdup(varname);
+	new_el->value = strdup(varvalue);
 	new_el->value_len = strlen(varvalue);
 
 	// Add to the beginning of the list
@@ -81,10 +68,14 @@ void ini_parse_section_header(const char* line)
 	}
 
 	int section_name_len = end - begin - 1;
-	char* const secname = malloc(section_name_len+1);
-	secname[0] = '\0';
-	strncat(secname, begin+1, section_name_len);
+	char* const secname =  str_without_ws(begin+1, section_name_len);
 	printf("Parsed section name: [%s]\n", secname);
+
+	if(!is_valid_identifier(secname, secname + strlen(secname))){
+		fprintf(stderr, "[Err] Invalid section name:\n");
+		fprintf(stderr, "      \"%s\"\n", secname);
+		exit(2);
+	}
 
 	// Handle parsed section name
 
@@ -106,20 +97,22 @@ void ini_parse_var_assignment(const char* line)
 		exit(2);
 	}
 
-	char* const varname = malloc(len);
-	varname[0] = '\0';
-	strncat(varname, line, eq_sign - line);
+	char* const varname = str_without_ws(line, eq_sign - line);
 	printf("Parsed variable name: \"%s\"\n", varname);
 
-	char* const varvalue = malloc(len);
-	varvalue[0] = '\0';
-	strncat(varvalue, eq_sign+1, len - (eq_sign-line+1));
-	printf("Parsed variable value: \"%s\"\n", varvalue);
+	if(!is_valid_identifier(varname, varname + strlen(varname))){
+		fprintf(stderr, "[Err] Invalid variable name:\n");
+		fprintf(stderr, "      \"%s\"\n", varname);
+		exit(2);
+	}
 
-	ini_add_parsed_variable(varname, varvalue);
+	char* const value = str_without_ws(eq_sign+1, len - (eq_sign-line+1));
+	printf("Parsed variable value: \"%s\"\n", value);
+
+	ini_add_parsed_variable(varname, value);
 
 	free(varname);
-	free(varvalue);
+	free(value);
 }
 
 // __attribute__((destructor))  // does not work on MSVC ;f

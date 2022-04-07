@@ -115,12 +115,21 @@ static inline int main4(const char* arg_expression){
 	(void)(arg_expression); puts("TODO"); exit(123);
 }
 
+#ifdef __WIN32__
+static void _fix_win32_ansi_escape(void);
+#endif
+
 int main(int argc, char** argv){
 	PROG_NAME = argv[0];
 	if(argc <= 1 || argc > 4){
 		usage();
 		return 1;
 	}
+
+	#ifdef __WIN32__
+	_fix_win32_ansi_escape();
+	#endif
+
 	// TODO: Complain about arguments before reading the file
 
 	read_file_line_by_line(argv[1]);
@@ -163,7 +172,7 @@ void usage(void){
 // Enable ANSI escape sequences in Windows consoles
 // See https://docs.microsoft.com/en-us/windows/console/getconsolemode#parameters
 // __attribute__((constructor))
-void _fix_win32_ansi_escape(void){
+static void _fix_win32_ansi_escape(void){
 	const int handle_arr[] = {STD_OUTPUT_HANDLE, STD_ERROR_HANDLE};
 	for(int i=0; i < 2; i++){
 		const HANDLE _H = GetStdHandle(handle_arr[i]);

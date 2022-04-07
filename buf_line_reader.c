@@ -116,7 +116,7 @@ void read_file_line_by_line(const char* fname){
 		linereadbuf[len-1] = '\0'; // Replace end of line char
 
 		// Process the line
-		line_handler(linereadbuf, len-1, lineno);
+		line_handler(linereadbuf, lineno);
 
 		// Clear buffer
 		linereadbuf[0] = '\0';

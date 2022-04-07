@@ -70,7 +70,7 @@ void ini_parse_section_header(const char* line, int lineno)
 
 	int section_name_len = end - begin - 1;
 	char* const secname =  str_without_ws(begin+1, section_name_len);
-	printf("Parsed section name: [%s]\n", secname);
+	// printf("Parsed section name: [%s]\n", secname);
 
 	if(!is_valid_identifier(secname, secname + strlen(secname))){
 		fprintf(stderr, "[Err] Invalid section name:\n");
@@ -100,7 +100,7 @@ void ini_parse_var_assignment(const char* line, int lineno)
 	}
 
 	char* const varname = str_without_ws(line, eq_sign - line);
-	printf("Parsed variable name: \"%s\"\n", varname);
+	// printf("Parsed variable name: \"%s\"\n", varname);
 
 	if(!is_valid_identifier(varname, varname + strlen(varname))){
 		fprintf(stderr, "[Err] Invalid variable name:\n");
@@ -109,7 +109,7 @@ void ini_parse_var_assignment(const char* line, int lineno)
 	}
 
 	char* const value = str_without_ws(eq_sign+1, len - (eq_sign-line+1));
-	printf("Parsed variable value: \"%s\"\n", value);
+	// printf("Parsed variable value: \"%s\"\n", value);
 
 	ini_add_parsed_variable(varname, value);
 
@@ -125,7 +125,6 @@ void ini_parse_var_assignment(const char* line, int lineno)
 		global_ini_current_section = NULL;
 	}
 
-	fprintf(stderr, "Freeing global state.\n");
 	struct IniLinkedList *ptr, *old;
 	for(ptr = global_ini_state; ptr != NULL; ){
 		free(ptr->section);

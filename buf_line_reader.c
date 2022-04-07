@@ -87,7 +87,7 @@ void read_file_line_by_line(const char* fname)
 				last_pos = pos;
 			}
 		}
-		fprintf(stderr, "Maximum line length is %zu\n", max_line_size);
+		// fprintf(stderr, "Maximum line length is %zu\n", max_line_size);
 		rewind(f);
 
 		// Allocate the line buffer

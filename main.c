@@ -49,8 +49,6 @@ bool parse_section_key_str(const char** sptr, char** out_section, char** out_key
 	char* const buf_key = calloc(1, 1 + end_of_key - name_of_key);
 	strncpy(buf_key, name_of_key, end_of_key - name_of_key);
 
-	fprintf(stderr, "Section name is \"%s\" and key is \"%s\"\n", buf_section, buf_key);
-
 	*out_section = buf_section;
 	*out_key = buf_key;
 
@@ -65,7 +63,7 @@ void dump_ini_data(void)
 	struct IniLinkedList *ptr = global_ini_state;
 	int count = 0;
 	while(ptr != NULL){
-		fprintf(stderr, "[\"%s\"] \"%s\" = \"%s\"\n",
+		printf("%s.%s = %s\n",
 			ptr->section, ptr->variable, ptr->value);
 		count++;
 		ptr = ptr->next;
@@ -75,8 +73,6 @@ void dump_ini_data(void)
 
 static inline int main3(const char* arg_var_name)
 {
-	// fprintf(stderr, "Trying to find variable \"%s\"\n", arg_var_name);
-
 	const char* sec_key_str = arg_var_name;
 	char* buf_section;
 	char* buf_key;
@@ -96,7 +92,7 @@ static inline int main3(const char* arg_var_name)
 			continue;
 		if(iter->variable_len != our_key_len || strcmp(iter->variable, buf_key) != 0)
 			continue;
-		fprintf(stderr, "Found [%s] \"%s\" = \"%s\"\n",
+		fprintf(stderr, "Found %s.%s = \"%s\"\n",
 			iter->section, iter->variable, iter->value);
 		found = true;
 		printf("%s\n", iter->value);

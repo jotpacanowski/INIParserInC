@@ -120,6 +120,8 @@ void read_file_line_by_line(const char* fname)
 		bufptr = linereadbuf;
 	}
 
+	free(linereadbuf);
+
 	if(!feof(f)){
 		fclose(f);
 		fprintf(stderr, "Error while reading \"%s\"\n", fname);

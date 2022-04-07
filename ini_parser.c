@@ -120,6 +120,11 @@ void ini_parse_var_assignment(const char* line, int lineno)
 // __attribute__((destructor))  // does not work on MSVC ;f
  void ini_free_global_state(void)
  {
+	if(global_ini_current_section != NULL){
+		free(global_ini_current_section);
+		global_ini_current_section = NULL;
+	}
+
 	fprintf(stderr, "Freeing global state.\n");
 	struct IniLinkedList *ptr, *old;
 	for(ptr = global_ini_state; ptr != NULL; ){

@@ -138,28 +138,35 @@ int main(int argc, char** argv)
 
 	read_file_line_by_line(argv[1]);
 
+	int ec = 0;
+
 	if(argc == 2){
 		dump_ini_data();
-		return 0;
 	}else if(argc == 3){
 		if(strcmp(argv[2], "expression") == 0){
 			fprintf(stderr, "Expected second argument after \"expression\".");
-			return 1;
+			ec = 1;
+		}else{
+			ec = main3(argv[2]);
 		}
-		return main3(argv[2]);
 
 	}else if(argc == 4){
 		if(strcmp(argv[2], "expression") != 0){
 			fprintf(stderr, "Expected second argument to be \"expression\".");
-			return 1;
+			ec = 1;
+		}else{
+			ec = main4(argv[3]);
 		}
-		return main4(argv[3]);
 	}else{
 		fprintf(stderr, "???\n");
 		usage();
-		return 1;
+		ec = 1;
 	}
-	// return 0;
+
+	// Free allocated memory
+	ini_free_global_state();
+
+	return ec;
 }
 
 void usage(void)

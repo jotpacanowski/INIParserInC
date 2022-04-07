@@ -30,4 +30,6 @@ struct IniLinkedList {
 
 extern struct IniLinkedList *global_ini_state;
 
+void ini_free_global_state(void);
+
 #endif

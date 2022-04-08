@@ -124,6 +124,73 @@ static inline int main3(const char* arg_var_name)
 	return 0;
 }
 
+static bool is_this_an_integer(const char* const s)
+{
+	if(s == NULL || s[0] == '\0') return false;
+	bool neg = s[0] == '-';
+	const char* p = neg? s+1 : s;
+	while(*p != '\0' && isdigit(*p))
+		p++;
+	// p -> end of digits (maybe end of s)
+	if(*p == '\0' && p-s == 1 && neg)
+		return false; // "-"
+	return *p == '\0';
+}
+
+static bool evaluate_expression(const char* lhs, char op, const char* rhs)
+{
+	// Check type (!float, int, string)
+	bool is_lhs_int = is_this_an_integer(lhs);
+	bool is_rhs_int = is_this_an_integer(rhs);
+	bool both_ints = is_lhs_int && is_rhs_int;
+
+	long long lhs_i = 0, rhs_i = 0;
+	if(both_ints){
+		lhs_i = atoll(lhs);
+		rhs_i = atoll(rhs);
+	}
+
+	if(op == '+' && both_ints){
+		fprintf(stderr, "[OK] integer addition\n");
+		printf("%lld\n", lhs_i + rhs_i);
+		return true;
+	}else if(op == '+' && !both_ints){
+		if(is_lhs_int || is_rhs_int)
+			fprintf(stderr, "[Warn] One of the arguments "
+				"is not an integer\n");
+		fprintf(stderr, "[OK] string concatenation\n");
+		printf("%s%s\n", lhs, rhs);
+		return true;
+	}
+
+	// The rest of operators, "-*/" need integer arguments (maybe float (?))
+	if(!both_ints){
+		fprintf(stderr, "[Err] Wrong arguments for \'%c\'\n", op);
+		if(!is_lhs_int)
+			fprintf(stderr, "[Err] -> \"%s\"\n", lhs);
+		if(!is_rhs_int)
+			fprintf(stderr, "[Err] -> \"%s\"\n", rhs);
+		return false;
+	}
+
+	switch(op){
+		case '-':
+			printf("%lld\n", lhs_i - rhs_i);
+			break;
+		case '*':
+			printf("%lld\n", lhs_i * rhs_i);
+			break;
+		case '/':
+			printf("%lld\n", lhs_i / rhs_i);
+			printf("fp: %lf\n", lhs_i / (double)rhs_i);
+			break;
+		default:
+			fprintf(stderr, "[Err] Unknown operation \'%c\'", op);
+			return false;
+	}
+	return true;
+}
+
 static const char EXPR_OPS[] = "+-*/";
 
 static inline int main4(const char* arg_expression)
@@ -210,14 +277,9 @@ static inline int main4(const char* arg_expression)
 	fprintf(stderr, "# EXPRESSION:\n");
 	fprintf(stderr, "# \"%15s\" [%c] \"%15s\" \n", v1->value, o, v2->value);
 
-	// Check type (float, int, string)
-
-	// Do string concatenation
-	if(o == '+'){
-		printf("%s%s\n", v1->value, v2->value);
-	}else{
-		fprintf(stderr, " TODO \n");
-	}
+	bool ok = evaluate_expression(v1->value, o, v2->value);
+	if(!ok)
+		status = 1;
 
 main4_error:
 	free(p1_sec);

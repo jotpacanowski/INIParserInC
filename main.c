@@ -18,7 +18,7 @@ bool parse_section_key_str(const char** sptr, char** out_section, char** out_key
 
 	char *dot = strchr(ptr, '.');
 	if(dot == NULL){
-		fprintf(stderr, "Error: expected '.'\n");
+		fprintf(stderr, "[Err] Expected '.'\n");
 		return false;
 	}
 
@@ -37,11 +37,11 @@ bool parse_section_key_str(const char** sptr, char** out_section, char** out_key
 
 	if(!is_valid_identifier(name_of_section, end_of_section+1-1)){
 		fprintf(stderr, "[Err] Invalid section name \n");
-		exit(2);
+		return false;
 	}
 	if(!is_valid_identifier(name_of_key, end_of_key)){
 		fprintf(stderr, "[Err] Invalid key name \n");
-		exit(2);
+		return false;
 	}
 
 	char* const buf_section = calloc(1, 1 + end_of_section - name_of_section);

@@ -76,8 +76,13 @@ static struct IniLinkedList* lookup_ini_data(const char* section, const char* ke
 	size_t sec_len = strlen(section);
 	size_t key_len = strlen(key);
 
+	bool section_exists = false;
+
 	struct IniLinkedList *iter;
 	for(iter = global_ini_state; iter != NULL; iter = iter->next){
+		if(!section_exists && strcmp(section, iter->section) == 0)
+			section_exists = true;
+
 		if(iter->section_len != sec_len || iter->variable_len != key_len)
 			continue;
 		if(strcmp(iter->section, section) != 0)
@@ -86,6 +91,11 @@ static struct IniLinkedList* lookup_ini_data(const char* section, const char* ke
 			continue;
 		return iter;
 	}
+	if(section_exists)
+		fprintf(stderr, "[Warn] Failed to find key \"%s\" in section [%s]\n",
+			key, section);
+	else
+		fprintf(stderr, "[Warn] Failed to find section \"%s\"\n", section);
 	return NULL;
 }
 

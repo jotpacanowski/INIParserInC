@@ -191,7 +191,7 @@ static bool evaluate_expression(const char* lhs, char op, const char* rhs)
 	return true;
 }
 
-static const char EXPR_OPS[] = "+-*/";
+// static const char EXPR_OPS[] = "+-*/";
 
 static inline int main4(const char* arg_expression)
 {
@@ -201,10 +201,8 @@ static inline int main4(const char* arg_expression)
 	char* p1_sec;
 	char* p1_key;
 	bool good = parse_section_key_str(&buf_expr, &p1_sec, &p1_key);
-	char* oper = oper = buf_expr;
+	const char* const oper = buf_expr;
 	char o = *oper; // Skipped whitespace.
-	// *oper = '\0'; // Parse until the operator
-	// *oper = o;
 	if(!good){
 		fprintf(stderr, "Invalid INI variable name: \"%s\"\n", buf_expr);
 		exit(2);

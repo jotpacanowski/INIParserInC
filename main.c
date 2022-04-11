@@ -197,46 +197,20 @@ static inline int main4(const char* arg_expression)
 {
 	int status = 0;
 
-	// Find one of "+-*/"
-	char* oper = NULL;
-	for(int i=0; i < (int)(sizeof(EXPR_OPS) - 1); i++){
-		char* const x = strchr(arg_expression, EXPR_OPS[i]);
-		const char* const x2 = strchr(arg_expression, EXPR_OPS[i]);
-		if(x == NULL)
-			continue;
-
-		if(x != x2){
-			fprintf(stderr, "[Err] Found '%c' used two times\n",
-				EXPR_OPS[i]);
-			return 2;
-		}
-
-		if(oper != NULL){
-			fprintf(stderr, "[Err] Using multiple operators"
-				" is not supported\n");
-			return 2;
-		}
-		oper = x;
-	}
-
-	if(oper == NULL){
-		fprintf(stderr, "[Err] Invalid expression\n");
-		return 2;
-	}
-
-	// const char* const buf_part1 = strdup_substring(
-	// arg_expression, oper - arg_expression);
 	const char* buf_expr = arg_expression;
 	char* p1_sec;
 	char* p1_key;
-	char o = *oper;
-	*oper = '\0'; // Parse until the operator
 	bool good = parse_section_key_str(&buf_expr, &p1_sec, &p1_key);
-	*oper = o;
+	char* oper = oper = buf_expr;
+	char o = *oper; // Skipped whitespace.
+	// *oper = '\0'; // Parse until the operator
+	// *oper = o;
 	if(!good){
 		fprintf(stderr, "Invalid INI variable name: \"%s\"\n", buf_expr);
 		exit(2);
 	}
+
+	// asm("int3");
 
 	buf_expr = oper + 1;
 	char* p2_sec;
@@ -249,7 +223,7 @@ static inline int main4(const char* arg_expression)
 
 	fprintf(stderr, "# EXPRESSION:\n");
 	fprintf(stderr, "#     %s.%s\n", p1_sec, p1_key);
-	fprintf(stderr, "# [%c]  \n", *oper);
+	fprintf(stderr, "# [%c]  \n", o);
 	fprintf(stderr, "#     %s.%s\n", p2_sec, p2_key);
 
 	// Find the values in the linked list

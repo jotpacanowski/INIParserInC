@@ -261,10 +261,6 @@ main4_error:
 	return status;
 }
 
-#ifdef __WIN32__
-static void _fix_win32_ansi_escape(void);
-#endif
-
 int main(int argc, char** argv)
 {
 	PROG_NAME = argv[0];
@@ -272,12 +268,6 @@ int main(int argc, char** argv)
 		usage();
 		return 1;
 	}
-
-	#ifdef __WIN32__
-	_fix_win32_ansi_escape();
-	#endif
-
-	// TODO: Complain about arguments before reading the file
 
 	read_file_line_by_line(argv[1]);
 
@@ -319,23 +309,3 @@ void usage(void)
 	fprintf(stderr, "       %s FILE expression EXPR\n", PROG_NAME);
 	exit(1);
 }
-
-#ifdef __WIN32__
-#define WIN32_LEAN_AND_MEAN 1
-#include <windows.h>
-
-// Enable ANSI escape sequences in Windows consoles
-// See https://docs.microsoft.com/en-us/windows/console/getconsolemode#parameters
-// __attribute__((constructor))
-static void _fix_win32_ansi_escape(void)
-{
-	const int handle_arr[] = {STD_OUTPUT_HANDLE, STD_ERROR_HANDLE};
-	for(int i=0; i < 2; i++){
-		const HANDLE _H = GetStdHandle(handle_arr[i]);
-		DWORD mode;
-		GetConsoleMode(_H, &mode);
-		mode = mode | 4; // ENABLE_VIRTUAL_TERMINAL_PROCESSING
-		SetConsoleMode(_H, mode);
-	}
-}
-#endif
